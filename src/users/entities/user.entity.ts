@@ -1,5 +1,9 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
+export enum ROLES {
+  PRO = 'pro',
+  CUSTOMER = 'customer',
+}
 @Entity()
 export class User {
   @PrimaryGeneratedColumn({
@@ -18,7 +22,30 @@ export class User {
   phoneNumber: string;
 
   @Column({
-    nullable: false,
+    nullable: true,
   })
   password: string;
+
+  @Column({
+    type: 'enum',
+    enum: ROLES,
+    nullable: false,
+  })
+  role: string;
+
+  @Column({
+    nullable: false,
+  })
+  is_phone_number_verify: boolean;
+
+  @Column({
+    nullable: true,
+  })
+  code_sms: string;
+
+  @Column({
+    type: 'timestamp',
+    nullable: true,
+  })
+  code_sms_timer: Date;
 }
