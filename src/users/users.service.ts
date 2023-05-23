@@ -18,7 +18,7 @@ export class UsersService {
     const salt = await bcrypt.genSalt();
     const createUser = {
       fullname: createUserDto.fullname,
-      phoneNumber: createUserDto.phoneNumber,
+      phoneNumber: `+212${createUserDto.phoneNumber.slice(1)}`,
       password: await bcrypt.hash(createUserDto.password, salt),
       role: 'pro',
       is_phone_number_verify: false,

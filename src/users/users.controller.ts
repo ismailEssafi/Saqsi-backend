@@ -12,19 +12,24 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { SmsHelper } from '../utils/smsHelper';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private smsHelper: SmsHelper,
+  ) {}
 
   @Post()
   @UsePipes(ValidationPipe)
   async create(@Body() createUserDto: CreateUserDto) {
     const result = await this.usersService.create(createUserDto);
-    return result;
-    // if (result) {
-    //   this.usersService.smsVerification(createUserDto.phoneNumber);
-    // }
+    if (result) {
+      return this.smsHelper.sendSMSMessageVerifyPhoneNumberCode(
+        result.phoneNumber,
+      );
+    }
   }
 
   @Get()
