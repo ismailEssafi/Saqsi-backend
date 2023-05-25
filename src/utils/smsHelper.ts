@@ -1,14 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import AWS from 'aws-sdk';
+import * as AWS from 'aws-sdk';
+const configService = new ConfigService();
+AWS.config.update({
+  accessKeyId: configService.get('AWS_ACCESS_KEY_ID'),
+  secretAccessKey: configService.get('AWS_SECRET_ACCESS_KEY'),
+  region: configService.get('AWS_REGION'),
+});
 @Injectable()
 export class SmsHelper {
-  // private sns = new AWS.SNS();
-  constructor(private configService: ConfigService, private sns: AWS.SNS) {}
+  private sns: AWS.SNS;
+  constructor() {
+    this.sns = new AWS.SNS({ apiVersion: '2010-03-31' });
+  }
 
-  sendSMSMessageVerifyPhoneNumberCode(phoneNumber: string) {
-    const code: number = Math.floor(1000 + Math.random() * 9000);
-    const message = `this is your code ${code}`;
+  async sendSMSMessageVerifyPhoneNumberCode(
+    phoneNumber: string,
+    smsCode: string,
+    cb,
+  ) {
+    const message = `this is your code ${smsCode}`;
     const params = {
       Message: message,
       PhoneNumber: phoneNumber,
@@ -19,16 +30,7 @@ export class SmsHelper {
         },
       },
     };
-    const publishTextPromise = this.sns.publish(params).promise();
 
-    publishTextPromise
-      .then(function (data) {
-        return 'message send success';
-        // res.end(JSON.stringify({ MessageID: data.MessageId }));
-      })
-      .catch(function (err) {
-        return 'message nor send error occurred';
-        // res.end(JSON.stringify({ Error: err }));
-      });
+    return this.sns.publish(params, cb);
   }
 }
