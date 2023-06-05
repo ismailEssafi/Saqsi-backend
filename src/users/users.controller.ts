@@ -39,7 +39,7 @@ export class UsersController {
       }
     }
     if (result) {
-      await this.smsHelper.sendSMSMessageVerifyPhoneNumberCode(
+      await this.smsHelper.sendOTP(
         result.phoneNumber,
         result.code_sms,
         async (err, data) => {
@@ -64,6 +64,11 @@ export class UsersController {
       );
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  @Post('otpVerification')
+  async otpVerification(@Body() userInfo: any) {
+    console.log(await this.usersService.otpVerification(userInfo));
   }
 
   @Get()

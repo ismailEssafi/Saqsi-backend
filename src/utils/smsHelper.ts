@@ -14,11 +14,7 @@ export class SmsHelper {
     this.sns = new AWS.SNS({ apiVersion: '2010-03-31' });
   }
 
-  async sendSMSMessageVerifyPhoneNumberCode(
-    phoneNumber: string,
-    smsCode: string,
-    cb,
-  ) {
+  async sendOTP(phoneNumber: string, smsCode: string, cb) {
     const message = `this is your code ${smsCode}`;
     const params = {
       Message: message,

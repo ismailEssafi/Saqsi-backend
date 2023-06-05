@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import * as moment from 'moment';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -50,7 +51,19 @@ export class UsersService {
     await this.userRepository.delete({ user_id: user_id });
   }
 
-  // smsVerification(phoneNumber: string) {
-  //   return `This action removes a #${id} user`;
-  // }
+  async otpVerification(userInfo: any) {
+    const user = await this.userRepository.findOneBy({
+      user_id: userInfo.userId,
+    });
+    console.log(user);
+    if (user.code_sms != userInfo.codeOTP) {
+      return 'invalid sms code';
+    }
+    const smsDatetime = moment(user.code_sms_timer).add(1, 'hour');
+    const datetimeNow = moment();
+    if (datetimeNow.isAfter(smsDatetime)) {
+      return 'the sms otp has expired';
+    }
+    return 'all good';
+  }
 }
