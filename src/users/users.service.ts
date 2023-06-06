@@ -51,19 +51,25 @@ export class UsersService {
     await this.userRepository.delete({ user_id: user_id });
   }
 
-  async otpVerification(userInfo: any) {
+  async otpVerification(otpInfo: any) {
     const user = await this.userRepository.findOneBy({
-      user_id: userInfo.userId,
+      user_id: otpInfo.userId,
     });
-    console.log(user);
-    if (user.code_sms != userInfo.codeOTP) {
-      return 'invalid sms code';
+    if (!user) {
+      throw new Error('user_not_found');
+    }
+    if (user.code_sms != otpInfo.codeOTP) {
+      return 'invalid_otp';
     }
     const smsDatetime = moment(user.code_sms_timer).add(1, 'hour');
     const datetimeNow = moment();
     if (datetimeNow.isAfter(smsDatetime)) {
-      return 'the sms otp has expired';
+      return 'otp_expired';
     }
-    return 'all good';
+    await this.userRepository.update(
+      { user_id: otpInfo.userId },
+      { is_phone_number_verify: true },
+    );
+    return 'phoneNumber_is_verify';
   }
 }

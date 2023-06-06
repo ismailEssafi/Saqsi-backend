@@ -10,13 +10,11 @@ import {
   ValidationPipe,
   UsePipes,
   HttpStatus,
-  HttpException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SmsHelper } from '../utils/smsHelper';
-import { error } from 'console';
 
 @Controller('users')
 export class UsersController {
@@ -42,7 +40,7 @@ export class UsersController {
       await this.smsHelper.sendOTP(
         result.phoneNumber,
         result.code_sms,
-        async (err, data) => {
+        async (err) => {
           if (err) {
             await this.usersService.remove(result.user_id);
             console.log(
@@ -54,6 +52,7 @@ export class UsersController {
           } else {
             return response.status(HttpStatus.CREATED).json({
               message: 'user was created',
+              userId: result.user_id,
             });
           }
         },
@@ -67,8 +66,34 @@ export class UsersController {
   }
 
   @Post('otpVerification')
-  async otpVerification(@Body() userInfo: any) {
-    console.log(await this.usersService.otpVerification(userInfo));
+  async otpVerification(@Res() response, @Body() otpInfo: any) {
+    let result: string;
+    try {
+      result = await this.usersService.otpVerification(otpInfo);
+    } catch (error) {
+      if (error == 'Error: user_not_found') {
+        return response.status(HttpStatus.BAD_REQUEST).json({
+          message: 'userId dont exist',
+        });
+      }
+      console.log('ERROR: in UsersController-->otpVerification()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    if (result == 'invalid_otp') {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'invalid otp',
+      });
+    }
+    if (result == 'otp_expired') {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'otp expired',
+      });
+    }
+    if (result == 'phoneNumber_is_verify') {
+      return response.status(HttpStatus.ACCEPTED).json({
+        message: 'phoneNumber_is_verify',
+      });
+    }
   }
 
   @Get()
