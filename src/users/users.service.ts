@@ -72,4 +72,27 @@ export class UsersService {
     );
     return 'phoneNumber_is_verify';
   }
+
+  async renewUserOtpInfo(userId: string) {
+    await this.userRepository.update(
+      { user_id: +userId },
+      {
+        code_sms: String(Math.floor(1000 + Math.random() * 9000)),
+        code_sms_timer: new Date(
+          Date.now() + this.configService.get('SMS_TIMER_MINUTE') * 60 * 1000,
+        )
+          .toISOString()
+          .replace('T', ' ')
+          .replace('Z', ''),
+      },
+    );
+
+    const result = await this.userRepository.findOneBy({
+      user_id: +userId,
+    });
+    if (!result) {
+      throw new Error('user_not_found');
+    }
+    return result;
+  }
 }

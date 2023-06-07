@@ -32,7 +32,7 @@ export class UsersController {
     } catch (error) {
       if (error.code == '23505') {
         return response.status(HttpStatus.BAD_REQUEST).json({
-          message: 'user phone number already exist',
+          message: 'user_phone_number_already_exist',
         });
       }
     }
@@ -51,7 +51,7 @@ export class UsersController {
             });
           } else {
             return response.status(HttpStatus.CREATED).json({
-              message: 'user was created',
+              message: 'user_was_created',
               userId: result.user_id,
             });
           }
@@ -73,7 +73,7 @@ export class UsersController {
     } catch (error) {
       if (error == 'Error: user_not_found') {
         return response.status(HttpStatus.BAD_REQUEST).json({
-          message: 'userId dont exist',
+          message: 'userId_dont_exist',
         });
       }
       console.log('ERROR: in UsersController-->otpVerification()');
@@ -81,19 +81,69 @@ export class UsersController {
     }
     if (result == 'invalid_otp') {
       return response.status(HttpStatus.BAD_REQUEST).json({
-        message: 'invalid otp',
+        message: result,
       });
     }
     if (result == 'otp_expired') {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        message: 'otp expired',
-      });
+      let updatedUser: any;
+      try {
+        updatedUser = await this.usersService.renewUserOtpInfo(otpInfo.userId);
+      } catch (error) {
+        console.log('ERROR: in UsersController-->otpVerification()');
+        return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+      }
+      await this.smsHelper.sendOTP(
+        updatedUser.phoneNumber,
+        updatedUser.code_sms,
+        async (err) => {
+          if (err) {
+            console.log('ERROR: in UsersController-->otpVerification()');
+            return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+          } else {
+            return response.status(HttpStatus.BAD_REQUEST).json({
+              message: result,
+            });
+          }
+        },
+      );
     }
     if (result == 'phoneNumber_is_verify') {
       return response.status(HttpStatus.ACCEPTED).json({
-        message: 'phoneNumber_is_verify',
+        message: result,
       });
     }
+  }
+
+  @Post('resendOTP/:userId')
+  async resendOTP(@Res() response, @Param('userId') userId: string) {
+    let updatedUser: any;
+    try {
+      updatedUser = await this.usersService.renewUserOtpInfo(userId);
+    } catch (error) {
+      if (error == 'Error: user_not_found') {
+        return response.status(HttpStatus.BAD_REQUEST).json({
+          message: 'userId_dont_exist',
+        });
+      }
+      console.log('ERROR: in UsersController-->otpVerification()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    await this.smsHelper.sendOTP(
+      updatedUser.phoneNumber,
+      updatedUser.code_sms,
+      async (err) => {
+        if (err) {
+          console.log(
+            'ERROR: in UsersController-->otpVerification() faild to send sms otp message',
+          );
+          return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+        } else {
+          return response.status(HttpStatus.OK).json({
+            message: 'otp_resend_success',
+          });
+        }
+      },
+    );
   }
 
   @Get()
