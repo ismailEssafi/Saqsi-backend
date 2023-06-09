@@ -35,6 +35,19 @@ export class UsersService {
     return this.userRepository.save(newUser);
   }
 
+  async login(loginInfo: any) {
+    const user = await this.userRepository.findOneBy({
+      phoneNumber: `+212${loginInfo.phoneNumber.slice(1)}`,
+    });
+    if (!user) {
+      return 'invalid_phoneNumber';
+    }
+    if (!bcrypt.compareSync(loginInfo.password, user.password)) {
+      return 'invalid_password';
+    }
+    return user;
+  }
+
   findAll() {
     return `This action returns all users`;
   }

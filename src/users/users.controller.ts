@@ -15,6 +15,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SmsHelper } from '../utils/smsHelper';
+import { response } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -65,6 +66,29 @@ export class UsersController {
     }
   }
 
+  @Post('login')
+  async login(@Res() response, @Body() loginInfo: any) {
+    let result;
+    try {
+      result = await this.usersService.login(loginInfo);
+    } catch (erro) {
+      console.log('ERROR: in UsersController-->login()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    if (result == 'invalid_phoneNumber' || result == 'invalid_password') {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        message: 'invalid_phone_number_or_password',
+      });
+    }
+    if (result.is_phone_number_verify == false)
+      return response.status(HttpStatus.PRECONDITION_REQUIRED).json({
+        userId: result.user_id,
+        message: 'phone_number_not_verified',
+      });
+    return response.status(HttpStatus.ACCEPTED).json({
+      user: result,
+    });
+  }
   @Post('otpVerification')
   async otpVerification(@Res() response, @Body() otpInfo: any) {
     let result: string;
