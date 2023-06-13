@@ -7,8 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import entities from './app.entities';
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     UsersModule,
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

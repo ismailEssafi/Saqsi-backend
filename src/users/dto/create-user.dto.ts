@@ -16,7 +16,7 @@ export class CreateUserDto {
   @Matches(/^[0-9]{10}$/)
   public phoneNumber: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
   @MinLength(10)
   public password: string;

@@ -1,6 +1,7 @@
 import {
   Controller,
   Res,
+  Req,
   Get,
   Post,
   Body,
@@ -10,13 +11,14 @@ import {
   ValidationPipe,
   UsePipes,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SmsHelper } from '../utils/smsHelper';
-import { response } from 'express';
-
+import { AuthGuard } from '@nestjs/passport';
+// import { LocalAuthGuard } from './guards/local-auth.guard';
 @Controller('users')
 export class UsersController {
   constructor(
@@ -66,29 +68,15 @@ export class UsersController {
     }
   }
 
+  @UseGuards(AuthGuard('local'))
   @Post('login')
-  async login(@Res() response, @Body() loginInfo: any) {
-    let result;
-    try {
-      result = await this.usersService.login(loginInfo);
-    } catch (erro) {
-      console.log('ERROR: in UsersController-->login()');
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
-    }
-    if (result == 'invalid_phoneNumber' || result == 'invalid_password') {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        message: 'invalid_phone_number_or_password',
-      });
-    }
-    if (result.is_phone_number_verify == false)
-      return response.status(HttpStatus.PRECONDITION_REQUIRED).json({
-        userId: result.user_id,
-        message: 'phone_number_not_verified',
-      });
+  async login(@Req() request, @Res() response) {
+    const result = await this.usersService.login(request.user);
     return response.status(HttpStatus.ACCEPTED).json({
-      user: result,
+      access_token: result.access_token,
     });
   }
+
   @Post('otpVerification')
   async otpVerification(@Res() response, @Body() otpInfo: any) {
     let result: string;

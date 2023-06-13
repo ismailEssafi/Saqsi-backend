@@ -1,18 +1,21 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+// import { LoginUserDto } from './dto/login-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as moment from 'moment';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
   constructor(
     private configService: ConfigService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -35,17 +38,25 @@ export class UsersService {
     return this.userRepository.save(newUser);
   }
 
-  async login(loginInfo: any) {
+  async validateCredentials(phoneNumber: string, password: string) {
+    console.log(phoneNumber);
     const user = await this.userRepository.findOneBy({
-      phoneNumber: `+212${loginInfo.phoneNumber.slice(1)}`,
+      phoneNumber: `+212${phoneNumber.slice(1)}`,
     });
     if (!user) {
-      return 'invalid_phoneNumber';
+      return null;
     }
-    if (!bcrypt.compareSync(loginInfo.password, user.password)) {
-      return 'invalid_password';
+    if (!bcrypt.compareSync(password, user.password)) {
+      return null;
     }
     return user;
+  }
+
+  async login(user: any) {
+    const payload = { phoneNumber: user.phoneNumber, user_id: user.user_id };
+    return {
+      access_token: await this.jwtService.sign(payload),
+    };
   }
 
   findAll() {
