@@ -71,9 +71,28 @@ export class UsersController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   async login(@Req() request, @Res() response) {
-    const result = await this.usersService.login(request.user);
+    let result;
+    if (request.user.is_phone_number_verify == false) {
+      return response.status(HttpStatus.NOT_ACCEPTABLE).json({
+        userId: request.user.user_id,
+      });
+    }
+    try {
+      result = await this.usersService.login(request.user);
+    } catch (err) {
+      console.log('ERROR: in UsersController-->login()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    response.cookie('access_token', result.access_token, {
+      sameSite: 'strict',
+      httpOnly: true,
+    });
+    response.cookie('refresh_token', result.refresh_token, {
+      sameSite: 'strict',
+      httpOnly: true,
+    });
     return response.status(HttpStatus.ACCEPTED).json({
-      access_token: result.access_token,
+      user: request.user,
     });
   }
 
@@ -158,9 +177,10 @@ export class UsersController {
     );
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @UseGuards(AuthGuard('jwt'))
+  @Post('test')
+  findAll(@Req() request) {
+    return request;
   }
 
   @Get(':id')

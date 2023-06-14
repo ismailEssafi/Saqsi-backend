@@ -49,4 +49,9 @@ export class User {
     nullable: true,
   })
   code_sms_timer: Date;
+
+  @Column({
+    nullable: true,
+  })
+  refresh_token: string;
 }

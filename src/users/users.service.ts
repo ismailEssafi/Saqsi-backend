@@ -39,7 +39,6 @@ export class UsersService {
   }
 
   async validateCredentials(phoneNumber: string, password: string) {
-    console.log(phoneNumber);
     const user = await this.userRepository.findOneBy({
       phoneNumber: `+212${phoneNumber.slice(1)}`,
     });
@@ -53,9 +52,19 @@ export class UsersService {
   }
 
   async login(user: any) {
-    const payload = { phoneNumber: user.phoneNumber, user_id: user.user_id };
+    const payload = { user_id: user.user_id, phoneNumber: user.phoneNumber };
+    const access_token = await this.jwtService.sign(payload);
+    const refresh_token = await this.jwtService.sign(payload, {
+      expiresIn: '90d',
+    });
+    await this.userRepository.update(
+      { user_id: user.user_id },
+      { refresh_token: refresh_token },
+    );
     return {
-      access_token: await this.jwtService.sign(payload),
+      user: user,
+      access_token: access_token,
+      refresh_token: refresh_token,
     };
   }
 
