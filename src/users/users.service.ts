@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 // import { LoginUserDto } from './dto/login-user.dto';
@@ -55,7 +55,7 @@ export class UsersService {
     const payload = { user_id: user.user_id, phoneNumber: user.phoneNumber };
     const access_token = await this.jwtService.sign(payload);
     const refresh_token = await this.jwtService.sign(payload, {
-      expiresIn: '90d',
+      expiresIn: '30d',
     });
     await this.userRepository.update(
       { user_id: user.user_id },
@@ -67,7 +67,19 @@ export class UsersService {
       refresh_token: refresh_token,
     };
   }
-
+  async renewAccessToken(refresh_token: string): Promise<string> {
+    let payload;
+    try {
+      payload = this.jwtService.verify(refresh_token);
+    } catch (error) {
+      throw new Error('invalid_refresh_token');
+    }
+    const access_token = await this.jwtService.sign({
+      user_id: payload.user_id,
+      phoneNumber: payload.phoneNumber,
+    });
+    return access_token;
+  }
   findAll() {
     return `This action returns all users`;
   }

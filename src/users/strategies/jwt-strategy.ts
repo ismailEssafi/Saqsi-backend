@@ -1,31 +1,29 @@
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Request } from 'express';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AccessTokenExpiredException } from '../../exceptions/access-token-expired.exception';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-  constructor() {
-    super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        JwtStrategy.extractJWT,
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]),
-      ignoreExpiration: false,
-      secretOrKey: `${process.env.JWT_SECRET}`,
-    });
-  }
-
-  private static extractJWT(req: Request): string | null {
-    if (
-      req.cookies &&
-      'access_token' in req.cookies &&
-      req.cookies.access_token.length > 0
-    ) {
-      return req.cookies.access_token;
+@Injectable()
+export class JwtStrategy implements CanActivate {
+  constructor(private reflector: Reflector, private jwtService: JwtService) {}
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    if (!request.cookies.access_token) {
+      return false;
     }
-    return null;
-  }
-
-  async validate(payload: any) {
-    return { user_id: payload.user_id, phoneNumber: payload.phoneNumber };
+    try {
+      this.jwtService.verify(request.cookies.access_token);
+    } catch (error) {
+      if (error.expiredAt) {
+        throw new AccessTokenExpiredException();
+      }
+      throw new UnauthorizedException();
+    }
+    return true;
   }
 }

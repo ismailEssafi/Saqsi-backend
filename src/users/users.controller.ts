@@ -11,13 +11,16 @@ import {
   ValidationPipe,
   UsePipes,
   HttpStatus,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SmsHelper } from '../utils/smsHelper';
+import { JwtStrategy } from './strategies/jwt-strategy';
 import { AuthGuard } from '@nestjs/passport';
+import { access } from 'fs';
 // import { LocalAuthGuard } from './guards/local-auth.guard';
 @Controller('users')
 export class UsersController {
@@ -84,11 +87,13 @@ export class UsersController {
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR);
     }
     response.cookie('access_token', result.access_token, {
-      sameSite: 'strict',
+      // secure: false, //secure == trensfer cookies in https or not
+      // sameSite: 'lax',
       httpOnly: true,
     });
     response.cookie('refresh_token', result.refresh_token, {
-      sameSite: 'strict',
+      // secure: false,
+      // sameSite: 'lax',
       httpOnly: true,
     });
     return response.status(HttpStatus.ACCEPTED).json({
@@ -177,10 +182,32 @@ export class UsersController {
     );
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @Get('renewAccessToken')
+  async renewAccessToken(@Req() request, @Res() response) {
+    let accessToken;
+    try {
+      accessToken = await this.usersService.renewAccessToken(
+        request.cookies.refresh_token,
+      );
+    } catch (error) {
+      if (error == 'Error: invalid_refresh_token') {
+        throw new UnauthorizedException();
+      }
+      console.log('ERROR: in UsersController-->renewAccessToken()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    response.cookie('access_token', accessToken, {
+      // secure: false, //secure == trensfer cookies in https or not
+      // sameSite: 'lax',
+      httpOnly: true,
+    });
+    return response.status(HttpStatus.ACCEPTED).json();
+  }
+
+  @UseGuards(JwtStrategy)
   @Post('test')
   findAll(@Req() request) {
-    return request;
+    return 'request';
   }
 
   @Get(':id')

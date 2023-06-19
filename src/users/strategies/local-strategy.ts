@@ -15,11 +15,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       usernameField: 'phoneNumber',
     });
   }
-  //username ==> phoneNumber
-  async validate(username: string, password: string) {
+  async validate(phoneNumber: string, password: string) {
     let user;
     try {
-      user = await this.usersService.validateCredentials(username, password);
+      user = await this.usersService.validateCredentials(phoneNumber, password);
     } catch (err) {
       console.log('ERROR: in UsersController-->login()');
       throw new InternalServerErrorException();
