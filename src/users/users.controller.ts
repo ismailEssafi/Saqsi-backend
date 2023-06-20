@@ -20,7 +20,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { SmsHelper } from '../utils/smsHelper';
 import { JwtStrategy } from './strategies/jwt-strategy';
 import { AuthGuard } from '@nestjs/passport';
-import { access } from 'fs';
 // import { LocalAuthGuard } from './guards/local-auth.guard';
 @Controller('users')
 export class UsersController {
@@ -41,34 +40,32 @@ export class UsersController {
           message: 'user_phone_number_already_exist',
         });
       }
-    }
-    if (result) {
-      await this.smsHelper.sendOTP(
-        result.phoneNumber,
-        result.code_sms,
-        async (err) => {
-          if (err) {
-            await this.usersService.remove(result.user_id);
-            console.log(
-              'ERROR: in UsersController-->create() faild to send sms otp message',
-            );
-            return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-              message: 'INTERNAL_SERVER_ERROR',
-            });
-          } else {
-            return response.status(HttpStatus.CREATED).json({
-              message: 'user_was_created',
-              userId: result.user_id,
-            });
-          }
-        },
-      );
-    } else {
       console.log(
         'ERROR: in UsersController-->create() faild to register a user',
       );
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR);
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
     }
+
+    await this.smsHelper.sendOTP(
+      result.phoneNumber,
+      result.code_sms,
+      async (err) => {
+        if (err) {
+          await this.usersService.remove(result.user_id);
+          console.log(
+            'ERROR: in UsersController-->create() faild to send sms otp message',
+          );
+          return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            message: 'INTERNAL_SERVER_ERROR',
+          });
+        } else {
+          return response.status(HttpStatus.CREATED).json({
+            message: 'user_was_created',
+            userId: result.user_id,
+          });
+        }
+      },
+    );
   }
 
   @UseGuards(AuthGuard('local'))
@@ -88,12 +85,14 @@ export class UsersController {
     }
     response.cookie('access_token', result.access_token, {
       // secure: false, //secure == trensfer cookies in https or not
-      // sameSite: 'lax',
+      // sameSite: '',lax
+      origin: 'http://localhost:4200',
       httpOnly: true,
     });
     response.cookie('refresh_token', result.refresh_token, {
       // secure: false,
       // sameSite: 'lax',
+      origin: 'http://localhost:4200',
       httpOnly: true,
     });
     return response.status(HttpStatus.ACCEPTED).json({
@@ -197,8 +196,9 @@ export class UsersController {
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
     }
     response.cookie('access_token', accessToken, {
-      // secure: false, //secure == trensfer cookies in https or not
+      secure: false, //secure == trensfer cookies in https or not
       // sameSite: 'lax',
+      origin: 'http://localhost:4200',
       httpOnly: true,
     });
     return response.status(HttpStatus.ACCEPTED).json();
@@ -206,8 +206,10 @@ export class UsersController {
 
   @UseGuards(JwtStrategy)
   @Post('test')
-  findAll(@Req() request) {
-    return 'request';
+  findAll(@Req() request, @Res() response) {
+    return response
+      .status(HttpStatus.ACCEPTED)
+      .json({ mesg: 'work just fine' });
   }
 
   @Get(':id')
