@@ -13,7 +13,7 @@ import { SmsHelper } from '../utils/smsHelper';
     PassportModule,
     JwtModule.register({
       secret: `${process.env.JWT_SECRET}`,
-      signOptions: { expiresIn: '1800s' },
+      signOptions: { expiresIn: '30s' },
     }),
     TypeOrmModule.forFeature([User]),
   ],

@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import * as moment from 'moment';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { SmsHelper } from '../utils/smsHelper';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,7 @@ export class UsersService {
     private configService: ConfigService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private jwtService: JwtService,
+    private smsHelper: SmsHelper,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -55,7 +57,7 @@ export class UsersService {
     const payload = { user_id: user.user_id, phoneNumber: user.phoneNumber };
     const access_token = await this.jwtService.sign(payload);
     const refresh_token = await this.jwtService.sign(payload, {
-      expiresIn: '30d',
+      expiresIn: '60s',
     });
     await this.userRepository.update(
       { user_id: user.user_id },
@@ -115,7 +117,7 @@ export class UsersService {
       { user_id: otpInfo.userId },
       { is_phone_number_verify: true },
     );
-    return 'phoneNumber_is_verify';
+    return user;
   }
 
   async renewUserOtpInfo(userId: string) {
@@ -139,5 +141,27 @@ export class UsersService {
       throw new Error('user_not_found');
     }
     return result;
+  }
+
+  async forgotPassword(phoneNumber: string) {
+    const user = await this.userRepository.findOneBy({
+      phoneNumber: `+212${phoneNumber.slice(1)}`,
+    });
+    if (!user) {
+      throw new Error('user_not_found');
+    }
+    const result = await this.renewUserOtpInfo(String(user.user_id));
+    await this.smsHelper.sendOTP(
+      result.phoneNumber,
+      result.code_sms,
+      async (err) => {
+        if (err) {
+          throw new Error('faild_to_send_otp');
+        } else {
+          return result.user_id;
+        }
+      },
+    );
+    return result.user_id;
   }
 }

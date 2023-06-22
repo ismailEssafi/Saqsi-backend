@@ -102,7 +102,7 @@ export class UsersController {
 
   @Post('otpVerification')
   async otpVerification(@Res() response, @Body() otpInfo: any) {
-    let result: string;
+    let result;
     try {
       result = await this.usersService.otpVerification(otpInfo);
     } catch (error) {
@@ -142,11 +142,11 @@ export class UsersController {
         },
       );
     }
-    if (result == 'phoneNumber_is_verify') {
-      return response.status(HttpStatus.ACCEPTED).json({
-        message: result,
-      });
-    }
+
+    return response.status(HttpStatus.ACCEPTED).json({
+      userId: result.user_id,
+      phoneNumber: result.phoneNumber,
+    });
   }
 
   @Post('resendOTP/:userId')
@@ -202,6 +202,58 @@ export class UsersController {
       httpOnly: true,
     });
     return response.status(HttpStatus.ACCEPTED).json();
+  }
+
+  @Post('forgotPassword')
+  async forgotPassword(
+    @Body('phoneNumber') phoneNumber: string,
+    @Res() response,
+  ) {
+    let result;
+    try {
+      result = await this.usersService.forgotPassword(phoneNumber);
+    } catch (error) {
+      if (error == 'Error: user_not_found') {
+        return response.status(HttpStatus.BAD_REQUEST).json();
+      }
+      if (error == 'Error: faild_to_send_otp') {
+        console.log(
+          'ERROR: in UsersController-->forgotPassword() faild to send sms otp message',
+        );
+        return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+      }
+      console.log('ERROR: in UsersController-->forgotPassword()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    return response.status(HttpStatus.ACCEPTED).json({
+      userId: result,
+    });
+  }
+
+  @Post('resetPassword')
+  async resetPassword(
+    @Body('phoneNumber') phoneNumber: string,
+    @Res() response,
+  ) {
+    let result;
+    try {
+      result = await this.usersService.forgotPassword(phoneNumber);
+    } catch (error) {
+      if (error == 'Error: user_not_found') {
+        return response.status(HttpStatus.BAD_REQUEST).json();
+      }
+      if (error == 'Error: faild_to_send_otp') {
+        console.log(
+          'ERROR: in UsersController-->forgotPassword() faild to send sms otp message',
+        );
+        return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+      }
+      console.log('ERROR: in UsersController-->forgotPassword()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    return response.status(HttpStatus.ACCEPTED).json({
+      userId: result,
+    });
   }
 
   @UseGuards(JwtStrategy)
