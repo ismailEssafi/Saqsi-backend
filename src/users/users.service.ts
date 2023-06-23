@@ -164,4 +164,27 @@ export class UsersService {
     );
     return result.user_id;
   }
+
+  async resetPassword(resetPasswordInfo: any) {
+    const salt = await bcrypt.genSalt();
+    const user = await this.userRepository.findOneBy({
+      user_id: resetPasswordInfo.userId,
+      code_sms: resetPasswordInfo.codeOTP,
+    });
+    if (!user) {
+      throw new Error('bad_request');
+    }
+    await this.userRepository.update(
+      { user_id: +user.user_id },
+      {
+        password: await bcrypt.hash(resetPasswordInfo.password, salt),
+      },
+    );
+    const payload = { user_id: user.user_id, phoneNumber: user.phoneNumber };
+    const access_token = await this.jwtService.sign(payload);
+    const refresh_token = await this.jwtService.sign(payload, {
+      expiresIn: '60s',
+    });
+    return { access_token, refresh_token };
+  }
 }

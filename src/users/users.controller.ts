@@ -17,6 +17,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SmsHelper } from '../utils/smsHelper';
 import { JwtStrategy } from './strategies/jwt-strategy';
 import { AuthGuard } from '@nestjs/passport';
@@ -230,30 +231,35 @@ export class UsersController {
     });
   }
 
+  @UsePipes(ValidationPipe)
   @Post('resetPassword')
   async resetPassword(
-    @Body('phoneNumber') phoneNumber: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
     @Res() response,
   ) {
     let result;
     try {
-      result = await this.usersService.forgotPassword(phoneNumber);
+      result = await this.usersService.resetPassword(resetPasswordDto);
     } catch (error) {
-      if (error == 'Error: user_not_found') {
+      if (error == 'Error: bad_request') {
         return response.status(HttpStatus.BAD_REQUEST).json();
-      }
-      if (error == 'Error: faild_to_send_otp') {
-        console.log(
-          'ERROR: in UsersController-->forgotPassword() faild to send sms otp message',
-        );
-        return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
       }
       console.log('ERROR: in UsersController-->forgotPassword()');
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
     }
-    return response.status(HttpStatus.ACCEPTED).json({
-      userId: result,
+    response.cookie('access_token', result.access_token, {
+      // secure: false, //secure == trensfer cookies in https or not
+      // sameSite: '',lax
+      origin: 'http://localhost:4200',
+      httpOnly: true,
     });
+    response.cookie('refresh_token', result.refresh_token, {
+      // secure: false,
+      // sameSite: 'lax',
+      origin: 'http://localhost:4200',
+      httpOnly: true,
+    });
+    return response.status(HttpStatus.ACCEPTED).json();
   }
 
   @UseGuards(JwtStrategy)
