@@ -23,6 +23,11 @@ export class User {
   phoneNumber: string;
 
   @Column({
+    nullable: false,
+  })
+  profile_img: string;
+
+  @Column({
     nullable: true,
   })
   password: string;

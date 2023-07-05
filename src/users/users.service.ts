@@ -3,7 +3,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 // import { LoginUserDto } from './dto/login-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User } from '../entities/user.entity';
+import { Professional } from '../entities/professional.entity';
+import { Pro_imgs } from '../entities/pro_imgs.entity';
+import { Pro_skills } from '../entities/pro_skills.entity';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as moment from 'moment';
@@ -16,6 +19,12 @@ export class UsersService {
   constructor(
     private configService: ConfigService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Professional)
+    private readonly professionalRepository: Repository<Professional>,
+    @InjectRepository(Pro_imgs)
+    private readonly proImgsRepository: Repository<Pro_imgs>,
+    @InjectRepository(Pro_skills)
+    private readonly proSkillsRepository: Repository<Pro_skills>,
     private jwtService: JwtService,
     private smsHelper: SmsHelper,
   ) {}
@@ -25,6 +34,8 @@ export class UsersService {
     const createUser = {
       fullname: createUserDto.fullname,
       phoneNumber: `+212${createUserDto.phoneNumber.slice(1)}`,
+      profile_img:
+        'https://static.vecteezy.com/system/resources/previews/015/272/283/original/construction-worker-icon-person-profile-avatar-with-hard-helmet-and-jacket-builder-man-in-a-helmet-icon-illustration-vector.jpg',
       password: await bcrypt.hash(createUserDto.password, salt),
       role: 'pro',
       is_phone_number_verify: false,
@@ -37,7 +48,56 @@ export class UsersService {
         .replace('Z', ''),
     };
     const newUser = this.userRepository.create(createUser);
-    return this.userRepository.save(newUser);
+    const user = await this.userRepository.save(newUser);
+    const createPro = {
+      user: user,
+      profession: 'add profession',
+      rating: 4,
+      description: 'add description here :>',
+    };
+    const newPro = this.professionalRepository.create(createPro);
+    const pro = await this.professionalRepository.save(newPro);
+    const createProSkills = [
+      {
+        professional: pro,
+        skill: 'skill1',
+      },
+      {
+        professional: pro,
+        skill: 'skill2',
+      },
+      {
+        professional: pro,
+        skill: 'skill3',
+      },
+      {
+        professional: pro,
+        skill: 'skill4',
+      },
+    ];
+    const newProSkills = this.proSkillsRepository.create(createProSkills);
+    await this.proSkillsRepository.save(newProSkills);
+    const createProImgs = [
+      {
+        professional: pro,
+        img: 'https://endlessicons.com/wp-content/uploads/2012/11/image-holder-icon-614x460.png',
+      },
+      {
+        professional: pro,
+        img: 'https://endlessicons.com/wp-content/uploads/2012/11/image-holder-icon-614x460.png',
+      },
+      {
+        professional: pro,
+        img: 'https://endlessicons.com/wp-content/uploads/2012/11/image-holder-icon-614x460.png',
+      },
+      {
+        professional: pro,
+        img: 'https://endlessicons.com/wp-content/uploads/2012/11/image-holder-icon-614x460.png',
+      },
+    ];
+    const newProImgs = this.proImgsRepository.create(createProImgs);
+    await this.proImgsRepository.save(newProImgs);
+    return user;
   }
 
   async validateCredentials(phoneNumber: string, password: string) {
