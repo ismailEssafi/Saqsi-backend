@@ -74,6 +74,14 @@ export class UsersService {
         professional: pro,
         skill: 'skill4',
       },
+      {
+        professional: pro,
+        skill: 'skill5',
+      },
+      {
+        professional: pro,
+        skill: 'skill6',
+      },
     ];
     const newProSkills = this.proSkillsRepository.create(createProSkills);
     await this.proSkillsRepository.save(newProSkills);
@@ -146,8 +154,18 @@ export class UsersService {
     return `This action returns all users`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async getProAllInfo(userId: number) {
+    const result = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.professional', 'professional')
+      .leftJoinAndSelect('professional.pro_skills', 'pro_skills')
+      .leftJoinAndSelect('professional.pro_imgs', 'pro_imgs')
+      .where('user.user_id = :user_id', { user_id: userId })
+      .getOne();
+    if (!result) {
+      throw new Error('user_not_found');
+    }
+    return result;
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

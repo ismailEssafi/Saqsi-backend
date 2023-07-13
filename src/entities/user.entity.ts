@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Professional } from './professional.entity';
 
 export enum ROLES {
   PRO = 'pro',
@@ -59,4 +60,7 @@ export class User {
     nullable: true,
   })
   refresh_token: string;
+
+  @OneToOne((type) => Professional, (professional) => professional.user)
+  professional: Professional;
 }

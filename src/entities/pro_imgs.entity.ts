@@ -8,7 +8,7 @@ export class Pro_imgs {
   })
   id: number;
 
-  @ManyToOne((type) => Professional, {
+  @ManyToOne(() => Professional, {
     onDelete: 'CASCADE',
   })
   professional: Professional;

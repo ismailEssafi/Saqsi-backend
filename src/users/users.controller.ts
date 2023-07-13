@@ -261,7 +261,6 @@ export class UsersController {
     });
     return response.status(HttpStatus.ACCEPTED).json();
   }
-
   @UseGuards(JwtStrategy)
   @Post('test')
   findAll(@Req() request, @Res() response) {
@@ -270,9 +269,19 @@ export class UsersController {
       .json({ mesg: 'work just fine' });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @Get('proInfo/:userId')
+  async getProAllInfo(@Param('userId') userId: string, @Res() response) {
+    let result;
+    try {
+      result = await this.usersService.getProAllInfo(Number(userId));
+    } catch (error) {
+      if (error == 'Error: user_not_found') {
+        return response.status(HttpStatus.BAD_REQUEST).json();
+      }
+      console.log('ERROR: in UsersController-->getProAllInfo()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    return response.status(HttpStatus.ACCEPTED).json(result);
   }
 
   @Patch(':id')
