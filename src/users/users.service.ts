@@ -51,6 +51,7 @@ export class UsersService {
     const user = await this.userRepository.save(newUser);
     const createPro = {
       user: user,
+      user_id: Number(user.user_id),
       profession: 'add profession',
       rating: 4,
       description: 'add description here :>',
@@ -264,5 +265,31 @@ export class UsersService {
       expiresIn: '60s',
     });
     return { access_token, refresh_token };
+  }
+
+  async editProfileImg(userId: string, imgUrl: string) {
+    await this.userRepository.update(
+      { user_id: Number(userId) },
+      { profile_img: imgUrl },
+    );
+  }
+
+  async editProImgs(userId: string, listImgInfo: any[]) {
+    const pro = await this.professionalRepository.findOneBy({
+      user_id: Number(userId),
+    });
+    const createProImgs: any[] = [];
+    for (const imgInfo of listImgInfo) {
+      createProImgs.push({
+        professional: pro,
+        img: imgInfo.Location,
+      });
+    }
+    const newProImgs = this.proImgsRepository.create(createProImgs);
+    await this.proImgsRepository.save(newProImgs);
+  }
+
+  async deleteImgs(userId: string, deleteImgs: number[]) {
+    await this.proImgsRepository.delete(deleteImgs);
   }
 }

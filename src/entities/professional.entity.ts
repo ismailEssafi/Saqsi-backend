@@ -32,7 +32,9 @@ export class Professional {
     nullable: false,
   })
   description: string;
-
+  @Column()
+  user_id: number
+  
   @OneToOne(() => User, (user) => user.professional, {
     onDelete: 'CASCADE',
   })

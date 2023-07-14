@@ -8,7 +8,7 @@ import { User } from './entities/user.entity';
 import { Professional } from './entities/professional.entity';
 import { Pro_skills } from './entities/pro_skills.entity';
 import { Pro_imgs } from './entities/pro_imgs.entity';
-import { UploadModule } from './upload/upload.module';
+import { ImagesModule } from './images/images.module';
 // import entities from './app.entities';
 @Module({
   imports: [
@@ -28,7 +28,7 @@ import { UploadModule } from './upload/upload.module';
       }),
       inject: [ConfigService],
     }),
-    UploadModule,
+    ImagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

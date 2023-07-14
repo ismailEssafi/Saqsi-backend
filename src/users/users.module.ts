@@ -22,5 +22,6 @@ import { SmsHelper } from '../utils/smsHelper';
   ],
   controllers: [UsersController],
   providers: [UsersService, SmsHelper, LocalStrategy, JwtStrategy],
+  exports: [UsersService],
 })
 export class UsersModule {}

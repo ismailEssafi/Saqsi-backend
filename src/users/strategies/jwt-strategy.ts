@@ -12,18 +12,20 @@ import { JwtService } from '@nestjs/jwt';
 export class JwtStrategy implements CanActivate {
   constructor(private reflector: Reflector, private jwtService: JwtService) {}
   canActivate(context: ExecutionContext): boolean {
+    let payload;
     const request = context.switchToHttp().getRequest();
     if (!request.cookies.access_token) {
       return false;
     }
     try {
-      this.jwtService.verify(request.cookies.access_token);
+      payload = this.jwtService.verify(request.cookies.access_token);
     } catch (error) {
       if (error.expiredAt) {
         throw new AccessTokenExpiredException();
       }
       throw new UnauthorizedException();
     }
+    request.payload = payload;
     return true;
   }
 }
