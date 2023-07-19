@@ -7,7 +7,7 @@ import { User } from '../entities/user.entity';
 import { Professional } from '../entities/professional.entity';
 import { Pro_imgs } from '../entities/pro_imgs.entity';
 import { Pro_skills } from '../entities/pro_skills.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as moment from 'moment';
 import * as bcrypt from 'bcrypt';
@@ -287,9 +287,17 @@ export class UsersService {
     }
     const newProImgs = this.proImgsRepository.create(createProImgs);
     await this.proImgsRepository.save(newProImgs);
+    return await this.proImgsRepository.findBy({ professional: pro });
   }
 
+  //i added { professional: pro } condition to ensure that user is calling the service is the owner of imgs
   async deleteImgs(userId: string, deleteImgs: number[]) {
-    await this.proImgsRepository.delete(deleteImgs);
+    const pro = await this.professionalRepository.findOneBy({
+      user_id: Number(userId),
+    });
+    await this.proImgsRepository.delete({
+      professional: pro,
+      id: In(deleteImgs),
+    });
   }
 }

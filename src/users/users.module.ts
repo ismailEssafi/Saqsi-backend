@@ -4,8 +4,8 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { LocalStrategy } from './strategies/local-strategy';
-import { JwtStrategy } from './strategies/jwt-strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from '../entities/user.entity';
 import { Professional } from '../entities/professional.entity';
 import { Pro_skills } from '../entities/pro_skills.entity';
@@ -16,7 +16,7 @@ import { SmsHelper } from '../utils/smsHelper';
     PassportModule,
     JwtModule.register({
       secret: `${process.env.JWT_SECRET}`,
-      signOptions: { expiresIn: '30s' },
+      signOptions: { expiresIn: '600s' },
     }),
     TypeOrmModule.forFeature([User, Professional, Pro_skills, Pro_imgs]),
   ],

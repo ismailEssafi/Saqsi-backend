@@ -3,9 +3,11 @@ import {
   Controller,
   Delete,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   Post,
+  Req,
   Res,
   UploadedFile,
   UploadedFiles,
@@ -14,19 +16,18 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, AnyFilesInterceptor } from '@nestjs/platform-express';
 import { ImagesService } from './images.service';
-import { JwtStrategy } from '../users/strategies/jwt-strategy';
+import { JwtStrategy } from '../users/strategies/jwt.strategy';
 
+@UseGuards(JwtStrategy)
 @Controller('images')
 export class ImagesController {
   constructor(private imagesService: ImagesService) {}
 
-  @UseGuards(JwtStrategy)
-  @Post('editProfileImg/:userId')
+  @Post('editProfileImg')
   @UseInterceptors(FileInterceptor('file'))
   async editProfileImg(
+    @Req() request,
     @Res() response,
-    @Res() request,
-    @Param('userId') userId: string,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -37,49 +38,65 @@ export class ImagesController {
     )
     file: Express.Multer.File,
   ) {
-    console.log("🚀 ~ file: images.controller.ts:40 ~ ImagesController ~ request:", request.payload)
-    
-    const result = await this.imagesService.editProfileImg(
-      file.originalname,
-      file.buffer,
-      file.mimetype,
-      userId,
-    );
-    return result;
+    let imgInfo: any;
+    try {
+      imgInfo = await this.imagesService.editProfileImg(
+        file.originalname,
+        file.buffer,
+        file.mimetype,
+        request.payload.user_id,
+      );
+    } catch (error) {
+      console.log('ERROR: in ImagesController-->editProfileImg()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    return response.status(HttpStatus.CREATED).json({
+      imgUrl: imgInfo.Location,
+    });
   }
-  
-  @Post('editProImgs/:userid')
+
+  @Post('editProImgs')
   @UseInterceptors(AnyFilesInterceptor())
   async editProImgs(
+    @Req() request,
     @Res() response,
-    @Param('userid') userid: string,
     @UploadedFiles(
       new ParseFilePipe({
         validators: [
-          //   new MaxFileSizeValidator({ maxSize: 1000000 }),
+          // new MaxFileSizeValidator({ maxSize: 4000 }),
           //   new FileTypeValidator({ fileType: 'image/jpeg' }),
         ],
       }),
     )
     files: Array<Express.Multer.File>,
   ) {
-    let result: any;
+    let proImgs: any;
     try {
-      result = await this.imagesService.editProImgs(files, userid);
+      proImgs = await this.imagesService.editProImgs(
+        files,
+        request.payload.user_id,
+      );
     } catch {
       console.log(
         'ERROR: in UsersController-->create() faild to register a user',
       );
       return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
     }
-    return response.status(HttpStatus.ACCEPTED).json(result.Location);
+    return response.status(HttpStatus.ACCEPTED).json(proImgs);
   }
 
-  @Delete('deleteImgs/:userId')
+  @Delete('deleteImgs')
   async deleteImgs(
-    @Param('userid') userId: string,
+    @Req() request,
+    @Res() response,
     @Body() deleteImgs: number[],
   ) {
-    await this.imagesService.deleteImgs(userId, deleteImgs);
+    try {
+      await this.imagesService.deleteImgs(request.payload.user_id, deleteImgs);
+    } catch (error) {
+      console.log('ERROR: in ImagesController-->editProfileImg()');
+      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json();
+    }
+    return response.status(HttpStatus.ACCEPTED).json();
   }
 }

@@ -19,9 +19,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SmsHelper } from '../utils/smsHelper';
-import { JwtStrategy } from './strategies/jwt-strategy';
 import { AuthGuard } from '@nestjs/passport';
-// import { LocalAuthGuard } from './guards/local-auth.guard';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+// import { AuthGuard } from '@nestjs/passport';
+// import { LocalAuthGuard } from './guards/local-auth.
+// import { JwtAuthenticationGuard } from './strategies/jwt-authentication.guard';
 @Controller('users')
 export class UsersController {
   constructor(

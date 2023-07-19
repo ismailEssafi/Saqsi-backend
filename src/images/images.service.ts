@@ -32,8 +32,8 @@ export class ImagesService {
       );
       listImgInfo.push(imginfo);
     }
-    await this.usersService.editProImgs(userId, listImgInfo);
-    return listImgInfo;
+    const proImgs = await this.usersService.editProImgs(userId, listImgInfo);
+    return proImgs;
   }
 
   async uploadImg(filename: string, file: Buffer, mimetype: string) {
@@ -48,7 +48,7 @@ export class ImagesService {
       .promise();
   }
 
-  async deleteImgs(userId: string, deleteImg: number[] ){
+  async deleteImgs(userId: string, deleteImg: number[]) {
     await this.usersService.deleteImgs(userId, deleteImg);
   }
 }

@@ -15,7 +15,7 @@ export class JwtStrategy implements CanActivate {
     let payload;
     const request = context.switchToHttp().getRequest();
     if (!request.cookies.access_token) {
-      return false;
+      throw new UnauthorizedException();
     }
     try {
       payload = this.jwtService.verify(request.cookies.access_token);
